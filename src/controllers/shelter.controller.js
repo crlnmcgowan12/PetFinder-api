@@ -1,4 +1,5 @@
-const prisma = require('../prisma/prismaClient');
+const prisma = require('../../prisma/prismaClient');
+
 
 /**
  * GET /api/shelters
