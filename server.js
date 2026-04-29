@@ -5,10 +5,10 @@ const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const path = require('path');
 
-const authRoutes = require('./routes/auth.routes');
-const shelterRoutes = require('./routes/shelter.routes');
-const petRoutes = require('./routes/pet.routes');
-const applicationRoutes = require('./routes/application.routes');
+const authRoutes = require('./src/routes/auth.routes');
+const shelterRoutes = require('./src/routes/shelter.routes');
+const petRoutes = require('./src/routes/pet.routes');
+const applicationRoutes = require('./src/routes/application.routes');
 
 const app = express();
 
@@ -18,7 +18,7 @@ app.use(express.json());
 
 // ─── API Docs ─────────────────────────────────────────────────────────────────
 try {
-  const swaggerDocument = YAML.load(path.join(__dirname, '../docs/openapi.yaml'));
+  const swaggerDocument = YAML.load(path.join(__dirname, 'openapi.yaml'));
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
   console.log('📄 Swagger docs available at /api/docs');
 } catch (err) {
