@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  name          String
+  email         String        @unique
+  password_hash String
+  created_at    DateTime      @default(now())
+  shelters      Shelter[]
+  applications  Application[]
+}
+
+model Shelter {
+  id       Int     @id @default(autoincrement())
+  name     String
+  city     String
+  state    String
+  phone    String
+  owner_id Int
+  owner    User    @relation(fields: [owner_id], references: [id])
+  pets     Pet[]
+}
+
+model Pet {
+  id           Int           @id @default(autoincrement())
+  name         String
+  species      String
+  breed        String?
+  age          Int?
+  status       PetStatus     @default(AVAILABLE)
+  shelter_id   Int
+  shelter      Shelter       @relation(fields: [shelter_id], references: [id])
+  applications Application[]
+}
+
+model Application {
+  id         Int               @id @default(autoincrement())
+  user_id    Int
+  pet_id     Int
+  status     ApplicationStatus @default(PENDING)
+  message    String?
+  created_at DateTime          @default(now())
+  user       User              @relation(fields: [user_id], references: [id])
+  pet        Pet               @relation(fields: [pet_id], references: [id])
+}
+
+enum PetStatus {
+  AVAILABLE
+  PENDING
+  ADOPTED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

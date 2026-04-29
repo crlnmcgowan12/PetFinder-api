@@ -1,0 +1,435 @@
+openapi: 3.0.3
+info:
+  title: Pet Finder API
+  description: |
+    A RESTful API for discovering adoptable pets, managing shelters, and submitting adoption applications.
+
+    ## Authentication
+    Protected endpoints require a Bearer JWT token.
+    Obtain a token via `POST /api/auth/login` or `POST /api/auth/signup`.
+
+    ## Seed Credentials
+    | Role          | Email                   | Password    |
+    |---------------|-------------------------|-------------|
+    | Admin/Owner   | admin@petfinder.com     | Admin1234!  |
+    | Regular User  | user@petfinder.com      | User1234!   |
+  version: 1.0.0
+  contact:
+    name: Pet Finder API
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://your-app.onrender.com
+    description: Production (Render)
+
+tags:
+  - name: Auth
+    description: User registration and login
+  - name: Shelters
+    description: Shelter management (CRUD)
+  - name: Pets
+    description: Pet management (CRUD)
+  - name: Applications
+    description: Adoption application management (CRUD)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Admin Owner" }
+        email: { type: string, example: "admin@petfinder.com" }
+        created_at: { type: string, format: date-time }
+
+    Shelter:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Happy Paws Shelter" }
+        city: { type: string, example: "Charlotte" }
+        state: { type: string, example: "NC" }
+        phone: { type: string, example: "704-555-0100" }
+        owner_id: { type: integer, example: 1 }
+        owner: { $ref: '#/components/schemas/User' }
+
+    Pet:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Buddy" }
+        species: { type: string, example: "Dog" }
+        breed: { type: string, example: "Golden Retriever", nullable: true }
+        age: { type: integer, example: 3, nullable: true }
+        status:
+          type: string
+          enum: [AVAILABLE, PENDING, ADOPTED]
+          example: AVAILABLE
+        shelter_id: { type: integer, example: 1 }
+
+    Application:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        user_id: { type: integer, example: 2 }
+        pet_id: { type: integer, example: 1 }
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+          example: PENDING
+        message: { type: string, example: "I would love to adopt Buddy!" }
+        created_at: { type: string, format: date-time }
+        user: { $ref: '#/components/schemas/User' }
+        pet: { $ref: '#/components/schemas/Pet' }
+
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: "Resource not found." }
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: "Authentication required. Please provide a Bearer token." }
+    Forbidden:
+      description: Authenticated but insufficient permissions
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: "Forbidden. Only the shelter owner can modify this resource." }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: "Resource not found." }
+
+# ─── Auth Endpoints ──────────────────────────────────────────────────────────
+paths:
+  /api/auth/signup:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string, example: "Jane Doe" }
+                email: { type: string, example: "jane@example.com" }
+                password: { type: string, example: "SecurePass1!" }
+      responses:
+        '201':
+          description: User created, JWT returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  token: { type: string, example: "eyJhbGciOiJIUzI1NiJ9..." }
+        '400': { description: Missing required fields }
+        '409': { description: Email already in use }
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in and receive a JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, example: "admin@petfinder.com" }
+                password: { type: string, example: "Admin1234!" }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  token: { type: string, example: "eyJhbGciOiJIUzI1NiJ9..." }
+        '400': { description: Missing required fields }
+        '401': { description: Invalid credentials }
+
+# ─── Shelter Endpoints ────────────────────────────────────────────────────────
+  /api/shelters:
+    get:
+      tags: [Shelters]
+      summary: List all shelters (public)
+      responses:
+        '200':
+          description: Array of shelters
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Shelter' }
+    post:
+      tags: [Shelters]
+      summary: Create a new shelter (authenticated)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, city, state, phone]
+              properties:
+                name: { type: string, example: "Second Chance Shelter" }
+                city: { type: string, example: "Raleigh" }
+                state: { type: string, example: "NC" }
+                phone: { type: string, example: "919-555-0200" }
+      responses:
+        '201': { description: Shelter created }
+        '400': { description: Missing required fields }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/shelters/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Shelters]
+      summary: Get a shelter by ID (public)
+      responses:
+        '200':
+          description: Shelter object with pets
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Shelter' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Shelters]
+      summary: Update a shelter (owner only)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                city: { type: string }
+                state: { type: string }
+                phone: { type: string }
+      responses:
+        '200': { description: Shelter updated }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Shelters]
+      summary: Delete a shelter (owner only)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Shelter deleted (no content) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+# ─── Pet Endpoints ────────────────────────────────────────────────────────────
+  /api/pets:
+    get:
+      tags: [Pets]
+      summary: List all pets (public)
+      parameters:
+        - name: species
+          in: query
+          schema: { type: string, example: "Dog" }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [AVAILABLE, PENDING, ADOPTED]
+      responses:
+        '200':
+          description: Array of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Pet' }
+    post:
+      tags: [Pets]
+      summary: Create a new pet (shelter owner only)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, species, shelter_id]
+              properties:
+                name: { type: string, example: "Max" }
+                species: { type: string, example: "Dog" }
+                breed: { type: string, example: "Labrador" }
+                age: { type: integer, example: 2 }
+                status:
+                  type: string
+                  enum: [AVAILABLE, PENDING, ADOPTED]
+                  default: AVAILABLE
+                shelter_id: { type: integer, example: 1 }
+      responses:
+        '201': { description: Pet created }
+        '400': { description: Missing required fields or invalid shelter }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/pets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Pets]
+      summary: Get a pet by ID (public)
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pet' }
+          description: Pet object
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Pets]
+      summary: Update a pet (shelter owner only)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                species: { type: string }
+                breed: { type: string }
+                age: { type: integer }
+                status:
+                  type: string
+                  enum: [AVAILABLE, PENDING, ADOPTED]
+      responses:
+        '200': { description: Pet updated }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Pets]
+      summary: Delete a pet (shelter owner only)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Pet deleted (no content) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+# ─── Application Endpoints ────────────────────────────────────────────────────
+  /api/applications:
+    post:
+      tags: [Applications]
+      summary: Submit an adoption application (any authenticated user)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pet_id]
+              properties:
+                pet_id: { type: integer, example: 1 }
+                message: { type: string, example: "I have a big yard and lots of love!" }
+      responses:
+        '201': { description: Application submitted }
+        '400': { description: Invalid pet_id or pet not available }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { description: Duplicate application }
+    get:
+      tags: [Applications]
+      summary: List accessible applications (applicant or shelter owner)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Array of applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Application' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/applications/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Applications]
+      summary: Get one application (applicant or shelter owner)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Application' }
+          description: Application object
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Applications]
+      summary: Update an application
+      description: |
+        - **Applicant** can update `message`
+        - **Shelter owner** can update `status`
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message: { type: string, example: "Updated message" }
+                status:
+                  type: string
+                  enum: [PENDING, APPROVED, REJECTED]
+      responses:
+        '200': { description: Application updated }
+        '400': { description: Invalid status value or no fields provided }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Applications]
+      summary: Delete an application (applicant only)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Application deleted (no content) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
