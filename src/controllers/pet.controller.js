@@ -1,4 +1,6 @@
-const prisma = require('../prismaClient');
+const prisma = require('../prisma/prismaClient');
+
+
 
 /**
  * Helper – verify that the authenticated user owns the shelter that owns the pet.
