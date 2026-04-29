@@ -18,11 +18,9 @@ info:
     name: Pet Finder API
 
 servers:
-  - url: http://localhost:3000
-    description: Local development
-  - url: https://your-app.onrender.com
-    description: Production (Render)
-
+  - url: https://petfinder-api-58r5.onrender.com
+    description: render
+  
 tags:
   - name: Auth
     description: User registration and login
