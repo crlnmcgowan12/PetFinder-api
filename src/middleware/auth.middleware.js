@@ -1,10 +1,8 @@
 const jwt = require('jsonwebtoken');
 
-/**
- * Middleware: verifies the Bearer JWT token in Authorization header.
- * On success, attaches `req.user = { id, email, name }`.
- * Returns 401 if missing/invalid.
- */
+// verifies the JWT token in header, attaches user info
+// Returns 401 if missing/invalid.
+ 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
 

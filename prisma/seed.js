@@ -6,13 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting seed...');
 
-  // Clean existing data in order (respect FK constraints)
+  // I think the emojis are okay and not unproffesional but please let me know prof/ta
+  
   await prisma.application.deleteMany();
   await prisma.pet.deleteMany();
   await prisma.shelter.deleteMany();
   await prisma.user.deleteMany();
 
-  // --- Users ---
+  // users
   const adminPassword = await bcrypt.hash('Admin1234!', 10);
   const admin = await prisma.user.create({
     data: {
@@ -33,7 +34,7 @@ async function main() {
   });
   console.log(`✅ Created regular user: ${regularUser.email}`);
 
-  // --- Shelter ---
+  // shekter
   const shelter = await prisma.shelter.create({
     data: {
       name: 'Happy Paws Shelter',
@@ -45,7 +46,7 @@ async function main() {
   });
   console.log(`✅ Created shelter: ${shelter.name}`);
 
-  // --- Pets ---
+  // pets
   const pet1 = await prisma.pet.create({
     data: {
       name: 'Buddy',
@@ -70,7 +71,7 @@ async function main() {
   });
   console.log(`✅ Created pet: ${pet2.name}`);
 
-  // --- Application ---
+  // application
   const application = await prisma.application.create({
     data: {
       user_id: regularUser.id,

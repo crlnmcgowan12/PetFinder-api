@@ -1,10 +1,7 @@
 const prisma = require('../../prisma/prismaClient');
 
 
-/**
- * GET /api/shelters
- * Public – list all shelters
- */
+//get, oublic, list all sheleter 
 const getAllShelters = async (req, res) => {
   try {
     const shelters = await prisma.shelter.findMany({
@@ -17,10 +14,7 @@ const getAllShelters = async (req, res) => {
   }
 };
 
-/**
- * GET /api/shelters/:id
- * Public – get one shelter
- */
+//get, public, one shelter
 const getShelterById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -39,10 +33,7 @@ const getShelterById = async (req, res) => {
   }
 };
 
-/**
- * POST /api/shelters
- * Private – authenticated user becomes owner
- */
+//post, private
 const createShelter = async (req, res) => {
   const { name, city, state, phone } = req.body;
 
@@ -62,10 +53,7 @@ const createShelter = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/shelters/:id
- * Private – only shelter owner
- */
+//put, private
 const updateShelter = async (req, res) => {
   const { id } = req.params;
   const { name, city, state, phone } = req.body;
@@ -95,11 +83,7 @@ const updateShelter = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/shelters/:id
- * Private – only shelter owner
- * Returns 204 No Content
- */
+//delete, 204 no content too
 const deleteShelter = async (req, res) => {
   const { id } = req.params;
 
@@ -114,7 +98,7 @@ const deleteShelter = async (req, res) => {
       return res.status(403).json({ error: 'Forbidden. Only the shelter owner can delete this shelter.' });
     }
 
-    // Cascade delete: applications → pets → shelter
+    // cascade delete
     for (const pet of shelter.pets) {
       await prisma.application.deleteMany({ where: { pet_id: pet.id } });
     }

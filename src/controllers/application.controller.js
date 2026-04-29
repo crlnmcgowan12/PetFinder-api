@@ -1,11 +1,8 @@
 const prisma = require('../../prisma/prismaClient');
 
 
-/**
- * POST /api/applications
- * Private – any authenticated user
- * Body: { pet_id, message }
- */
+//POST, make private Private
+
 const createApplication = async (req, res) => {
   const { pet_id, message } = req.body;
 
@@ -21,7 +18,7 @@ const createApplication = async (req, res) => {
       return res.status(400).json({ error: 'This pet is not currently available for adoption.' });
     }
 
-    // Prevent duplicate applications from the same user for the same pet
+    // prevent duplicate apps
     const existing = await prisma.application.findFirst({
       where: { user_id: req.user.id, pet_id: parseInt(pet_id) },
     });
@@ -48,15 +45,11 @@ const createApplication = async (req, res) => {
   }
 };
 
-/**
- * GET /api/applications
- * Private – returns only the applications the user is allowed to see:
- *   - Their own submissions (as applicant)
- *   - Applications for pets in shelters they own (as shelter owner)
- */
+// GET, private
+ 
 const getApplications = async (req, res) => {
   try {
-    // Find all shelters owned by this user
+    // find all owned by user
     const ownedShelters = await prisma.shelter.findMany({
       where: { owner_id: req.user.id },
       select: { id: true },
@@ -67,7 +60,7 @@ const getApplications = async (req, res) => {
       where: {
         OR: [
           { user_id: req.user.id },                          // applicant
-          { pet: { shelter_id: { in: shelterIds } } },       // shelter owner
+          { pet: { shelter_id: { in: shelterIds } } },       //  owner
         ],
       },
       include: {
@@ -83,10 +76,7 @@ const getApplications = async (req, res) => {
   }
 };
 
-/**
- * GET /api/applications/:id
- * Private – only applicant or shelter owner
- */
+//get, private
 const getApplicationById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -112,12 +102,8 @@ const getApplicationById = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/applications/:id
- * Private:
- *   - Applicant can update `message`
- *   - Shelter owner can update `status`
- */
+//put private 
+
 const updateApplication = async (req, res) => {
   const { id } = req.params;
   const { message, status } = req.body;
@@ -138,7 +124,7 @@ const updateApplication = async (req, res) => {
 
     const updateData = {};
 
-    // Applicant can update message
+    // applicaent can update message
     if (message !== undefined) {
       if (!isApplicant) {
         return res.status(403).json({ error: 'Only the applicant can update the message.' });
@@ -146,7 +132,7 @@ const updateApplication = async (req, res) => {
       updateData.message = message;
     }
 
-    // Shelter owner can update status
+    //  owner can update status
     if (status !== undefined) {
       if (!isShelterOwner) {
         return res.status(403).json({ error: 'Only the shelter owner can update the application status.' });
@@ -177,11 +163,8 @@ const updateApplication = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/applications/:id
- * Private – only the applicant
- * Returns 204 No Content
- */
+// delete private
+
 const deleteApplication = async (req, res) => {
   const { id } = req.params;
 

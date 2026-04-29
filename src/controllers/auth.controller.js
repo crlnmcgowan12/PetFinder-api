@@ -6,14 +6,12 @@ const prisma = require('../../prisma/prismaClient');
 
 const SALT_ROUNDS = 10;
 
-/**
- * POST /api/auth/signup
- * Body: { name, email, password }
- */
+//post
+
 const signup = async (req, res) => {
   const { name, email, password } = req.body;
 
-  // Validation
+  // validation
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email, and password are required.' });
   }
@@ -22,7 +20,7 @@ const signup = async (req, res) => {
   }
 
   try {
-    // Check for duplicate email
+    // duplicate email
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(409).json({ error: 'A user with that email already exists.' });
@@ -48,10 +46,7 @@ const signup = async (req, res) => {
   }
 };
 
-/**
- * POST /api/auth/login
- * Body: { email, password }
- */
+//post
 const login = async (req, res) => {
   const { email, password } = req.body;
 

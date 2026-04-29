@@ -3,10 +3,8 @@ const prisma = require('../../prisma/prismaClient');
 
 
 
-/**
- * Helper – verify that the authenticated user owns the shelter that owns the pet.
- * Returns { pet, shelter } or sends a 403/404 response.
- */
+//helper, returns or sends error
+
 const verifyPetOwnership = async (res, petId, userId) => {
   const pet = await prisma.pet.findUnique({
     where: { id: petId },
@@ -23,10 +21,8 @@ const verifyPetOwnership = async (res, petId, userId) => {
   return pet;
 };
 
-/**
- * GET /api/pets
- * Public – list all pets with optional ?species= and ?status= filters
- */
+//get, public
+
 const getAllPets = async (req, res) => {
   const { species, status } = req.query;
   try {
@@ -44,10 +40,7 @@ const getAllPets = async (req, res) => {
   }
 };
 
-/**
- * GET /api/pets/:id
- * Public – get one pet
- */
+//get, public, one pet
 const getPetById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -63,11 +56,8 @@ const getPetById = async (req, res) => {
   }
 };
 
-/**
- * POST /api/pets
- * Private – only the owner of the target shelter
- * Body: { name, species, breed, age, status, shelter_id }
- */
+//post, private
+
 const createPet = async (req, res) => {
   const { name, species, breed, age, status, shelter_id } = req.body;
 
@@ -101,10 +91,7 @@ const createPet = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/pets/:id
- * Private – only the owner of the shelter that owns this pet
- */
+//put, private, only owner
 const updatePet = async (req, res) => {
   const { id } = req.params;
   const { name, species, breed, age, status } = req.body;
@@ -131,11 +118,7 @@ const updatePet = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/pets/:id
- * Private – only the owner of the shelter that owns this pet
- * Returns 204 No Content
- */
+//delete, return 204 no content
 const deletePet = async (req, res) => {
   const { id } = req.params;
 
@@ -143,7 +126,7 @@ const deletePet = async (req, res) => {
     const pet = await verifyPetOwnership(res, parseInt(id), req.user.id);
     if (!pet) return;
 
-    // Remove associated applications first
+    // remove other applications first
     await prisma.application.deleteMany({ where: { pet_id: parseInt(id) } });
     await prisma.pet.delete({ where: { id: parseInt(id) } });
 

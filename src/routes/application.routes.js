@@ -9,7 +9,7 @@ const {
   deleteApplication,
 } = require('../controllers/application.controller');
 
-// All application routes require authentication
+// all application routes require authentication
 router.post('/', authenticate, createApplication);
 router.get('/', authenticate, getApplications);
 router.get('/:id', authenticate, getApplicationById);
